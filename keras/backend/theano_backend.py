@@ -3,7 +3,10 @@ from theano import tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 from theano.tensor.signal import pool
 from theano.tensor.nnet import conv3d2d
-from theano.sandbox import softsign as T_softsign
+try:
+    from theano.tensor.nnet.nnet import softsign as T_softsign
+except ImportError:
+    from theano.sandbox.softsign import softsign as T_softsign
 import inspect
 import numpy as np
 from .common import _FLOATX, _EPSILON
@@ -394,7 +397,7 @@ def temporal_padding(x, padding=1):
     '''Pad the middle dimension of a 3D tensor
     with "padding" zeros left and right.
 
-    Appologies for the inane API, but Theano makes this
+    Apologies for the inane API, but Theano makes this
     really hard.
     '''
     input_shape = x.shape
@@ -482,6 +485,13 @@ def get_value(x):
         raise Exception("'get_value() can only be called on a variable. " +
                         "If you have an expression instead, use eval().")
     return x.get_value()
+
+
+def batch_get_value(xs):
+    '''Returns the value of more than one tensor variable,
+    as a list of Numpy arrays.
+    '''
+    return [get_value(x) for x in xs]
 
 
 def set_value(x, value):
@@ -727,7 +737,7 @@ def softplus(x):
 
 
 def softsign(x):
-    return T_softsign.softsign(x)
+    return T_softsign(x)
 
 
 def categorical_crossentropy(output, target, from_logits=False):
@@ -772,7 +782,7 @@ def dropout(x, level, seed=None):
     if level < 0. or level >= 1:
         raise Exception('Dropout level must be in interval [0, 1[.')
     if seed is None:
-        seed = np.random.randint(10e6)
+        seed = np.random.randint(1, 10e6)
     rng = RandomStreams(seed=seed)
     retain_prob = 1. - level
     x *= rng.binomial(x.shape, p=retain_prob, dtype=x.dtype)
@@ -1017,20 +1027,20 @@ def pool3d(x, pool_size, strides=(1, 1, 1), border_mode='valid',
 
 def random_normal(shape, mean=0.0, std=1.0, dtype=_FLOATX, seed=None):
     if seed is None:
-        seed = np.random.randint(10e6)
+        seed = np.random.randint(1, 10e6)
     rng = RandomStreams(seed=seed)
     return rng.normal(size=shape, avg=mean, std=std, dtype=dtype)
 
 
 def random_uniform(shape, low=0.0, high=1.0, dtype=_FLOATX, seed=None):
     if seed is None:
-        seed = np.random.randint(10e6)
+        seed = np.random.randint(1, 10e6)
     rng = RandomStreams(seed=seed)
     return rng.uniform(shape, low=low, high=high, dtype=dtype)
 
 
 def random_binomial(shape, p=0.0, dtype=_FLOATX, seed=None):
     if seed is None:
-        seed = np.random.randint(10e6)
+        seed = np.random.randint(1, 10e6)
     rng = RandomStreams(seed=seed)
     return rng.binomial(shape, p=p, dtype=dtype)
